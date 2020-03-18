@@ -58,7 +58,7 @@ public class SensorClient {
         }          
         
         while(true) {
-            run();
+            run();            
             Thread.sleep(SENSOR_SLEEP);            
         }
     }
@@ -94,7 +94,9 @@ public class SensorClient {
     
     public static void run() throws UnknownHostException, IOException, ClassNotFoundException, InterruptedException { 
         // sensor stuff, for now just sends random temp data to simulate this
-        SendData("TEMP", ""+rand.nextInt(40));
+        SendData("TEMP", 
+                "[PID]"+ProcessHandle.current().pid()
+                + "//" + rand.nextInt(40));
     }
 }
 
