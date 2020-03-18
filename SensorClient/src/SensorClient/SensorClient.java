@@ -22,10 +22,10 @@ public class SensorClient {
     static int temp;
     static int fieldID;
     
-    static final String PARAMS = "Paramaters: <(Integer)FieldID>";
+    static final String PARAMS = "Paramaters: <(Integer)FieldID> <(Integer)Longitude> <Integer>";
     static final String HELP = "";
     static final String ERROR = "ERROR:";
-    static final int SENSOR_SLEEP = 5000;
+    static int SENSOR_SLEEP;
     static final int SERVER_SLEEP = 100;
     
     public static void main(String[] args) throws UnknownHostException, IOException, ClassNotFoundException, InterruptedException {        
@@ -35,7 +35,10 @@ public class SensorClient {
         inStream = null;
         temp = 0;
         fieldID = 0;
-        rand = new Random(fieldID);        
+        rand = new Random(fieldID); 
+        
+        // random wait to simulate sensors sending data out of sync
+        SENSOR_SLEEP = rand.nextInt(1000);
         
         // set field ID, server will group together similar sensors
         if (args.length != 1) {
@@ -43,25 +46,27 @@ public class SensorClient {
             System.err.println("Enter a field ID for this sensor");  
         // set field id if we have right no. args
         } else {
-            try {                 
-                fieldID = Integer.parseInt(args[0]);
-                SendData("ADDSENSOR", args[0]);
-            // catching errors ie. not using 
+            try {                
+                SendData("INIT", args[0]);
+            
             } catch (Exception e) {
+                // error catching/parsing
                 System.err.println(e.getMessage());
-                System.err.println(PARAMS);                
+                System.err.println(PARAMS);    
+                System.exit(0);
             }
         }          
         
         while(true) {
             run();
-            Thread.sleep(SENSOR_SLEEP);
+            Thread.sleep(SENSOR_SLEEP);            
         }
     }
     
     public static void SendData(String command, String data) throws UnknownHostException, IOException, ClassNotFoundException, InterruptedException {                
-        // sanitize inputs and compile command message
-        String msg = command.replace("*", "").toUpperCase() + "*" +
+        // SANITIZE INPUTS and compile command message using * token
+        // creates message like so: SENSOR*COMMAND*ARG*ARG*ARG... etc.
+        String msg = "SENSOR*" + command.replace("*", "").toUpperCase() + "*" +
                 data.replace("*", "").toUpperCase();        
         
         // establish socket connection to server
@@ -77,59 +82,22 @@ public class SensorClient {
         // read the server response message        
         inStream = new ObjectInputStream(socket.getInputStream());
         String message = (String) inStream.readObject();
-        System.out.println("Message: " + message);
+        System.out.println("Message from server: " + message);
         
         // close resources
         inStream.close();
-
         outStream.close();
+        
+        // halt thread for a bit to allow other processes to run
         Thread.sleep(SERVER_SLEEP);          
     }
     
     public static void run() throws UnknownHostException, IOException, ClassNotFoundException, InterruptedException { 
-                    // sensor stuff   
+        // sensor stuff, for now just sends random temp data to simulate this
+        SendData("TEMP", ""+rand.nextInt(40));
     }
 }
 
-//class Client {
-//    InetAddress host;
-//    Socket socket;
-//    ObjectOutputStream outStream;
-//    ObjectInputStream inStream;
-//    Random rand;
-//    int temp;
-//    int id;
-//    
-//    public Client(int _id) throws UnknownHostException, IOException, ClassNotFoundException, InterruptedException {
-//        host = InetAddress.getLocalHost();
-//        socket = null;
-//        outStream = null;
-//        inStream = null;
-//        temp = 0;
-//        id = _id;
-//        rand = new Random(id);
-//        System.out.printf("New Client with ID[%d]\n", id);
-//    }
-//    
-//    public void run ()throws UnknownHostException, IOException, ClassNotFoundException, InterruptedException { 
-//        temp = rand.nextInt(30);
-//        //establish socket connection to server
-//        socket = new Socket(host.getHostName(), 9876);
-//        //write to socket using ObjectOutputStream
-//        outStream = new ObjectOutputStream(socket.getOutputStream());
-//        System.out.println("Sending request to Socket Server");
-//
-//        outStream.writeObject(""+ temp + " celcius\t["+id+"]");
-//        //read the server response message
-//        inStream = new ObjectInputStream(socket.getInputStream());
-//        String message = (String) inStream.readObject();
-//        System.out.println("Message: " + message);
-//        //close resources
-//        inStream.close();
-//        outStream.close();
-//        Thread.sleep(1000);  
-//                
-//    }
-//}
+
 
 
